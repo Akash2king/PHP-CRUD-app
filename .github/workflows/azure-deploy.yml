@@ -20,12 +20,9 @@ env:
   DB_PORT: "3306"
 
 jobs:
-  build:
-    name: Build & push image
+  build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
-    outputs:
-      image: ${{ steps.meta.outputs.image }}
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -33,7 +30,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Azure login
+      - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -50,7 +47,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+      - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -61,52 +58,46 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Image reference
-        id: meta
+      # Container App must authenticate to ACR to PULL (push auth alone is not enough)
+      - name: Configure ACR pull on Container App
         run: |
-          echo "image=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest" >> "$GITHUB_OUTPUT"
-
-  deploy:
-    name: Deploy to Container App
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Deploy php-crud container with latest image
-        env:
-          APP: ${{ secrets.CONTAINER_APP_NAME }}
-          RG: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          IMAGE: ${{ needs.build.outputs.image }}
-          ACR_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-        run: |
-          set -euo pipefail
-          echo "Deploying image: ${IMAGE}"
-
           az containerapp registry set \
-            --name "$APP" \
-            --resource-group "$RG" \
-            --server "$ACR_SERVER" \
+            --name "${{ secrets.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --server "${{ secrets.ACR_LOGIN_SERVER }}" \
             --username "${{ secrets.ACR_USERNAME }}" \
             --password "${{ secrets.ACR_PASSWORD }}"
 
+      - name: Set database secrets (from GitHub Secrets)
+        run: |
           az containerapp secret set \
-            --name "$APP" \
-            --resource-group "$RG" \
+            --name "${{ secrets.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
             --secrets \
               "db-host=${{ secrets.DB_HOST }}" \
               "db-user=${{ secrets.DB_USER }}" \
               "db-password=${{ secrets.DB_PASSWORD }}"
 
-          # Replace portal quickstart container with php-crud + ACR :latest (one revision)
-          APP_ID=$(az containerapp show --name "$APP" --resource-group "$RG" --query id -o tsv)
+      - name: Deploy to Container App
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          acrName: ${{ secrets.ACR_NAME }}
+          acrUsername: ${{ secrets.ACR_USERNAME }}
+          acrPassword: ${{ secrets.ACR_PASSWORD }}
+          containerAppName: ${{ secrets.CONTAINER_APP_NAME }}
+          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+
+      # One update: php-crud container + :latest image + DB env (avoids clearing image)
+      - name: Wire container, image, and DB env
+        env:
+          IMAGE: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+        run: |
+          set -euo pipefail
+          APP_ID=$(az containerapp show \
+            --name "${{ secrets.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --query id -o tsv)
 
           az rest --method PATCH \
             --uri "${APP_ID}?api-version=2024-03-01" \
@@ -132,7 +123,7 @@ jobs:
               }
             }"
 
-      - name: App URL
+      - name: Print app URL
         run: |
           FQDN=$(az containerapp show \
             --name "${{ secrets.CONTAINER_APP_NAME }}" \
@@ -146,6 +137,7 @@ jobs:
             --name "${{ secrets.CONTAINER_APP_NAME }}" \
             --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
             --query "properties.template.containers[0].image" -o tsv)
+          echo "App URL: https://${FQDN}"
           echo "### Deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "- Container: \`${CONTAINER}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Image: \`${IMAGE}\`" >> "$GITHUB_STEP_SUMMARY"
