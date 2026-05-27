@@ -51,14 +51,14 @@ if($check_login === false){
   </thead>
   <tbody>
         
-        <?php foreach($notes as $notes){?>
+        <?php foreach($notes as $note){?>
             <tr>
-                    <th scope="row"><h6><?php echo $notes['noteID']?></h6></th>
-                    <td><h6><?php echo $notes['noteTitle']?></h6></td>
-                    <td><?php echo $notes['noteContent']?></td>
-                    <td><span><?php echo $notes['noteDate']?></span></td>
-                    <td><a href="backend/edit.php?noteID=<?php echo $notes['noteID'];?>"><Button type="button" class="btn btn-primary">Edit</Button></a>
-                    <Button type="button" class="btn btn-danger" name="<?php echo $notes['noteID']; ?>" onClick="deleteNote(<?php echo $notes['noteID']; ?>)">Delete</Button></td>
+                    <th scope="row"><h6><?php echo $note['noteID']?></h6></th>
+                    <td><h6><?php echo $note['noteTitle']?></h6></td>
+                    <td><?php echo $note['noteContent']?></td>
+                    <td><span><?php echo $note['noteDate']?></span></td>
+                    <td><a href="backend/edit.php?noteID=<?php echo $note['noteID'];?>"><Button type="button" class="btn btn-primary">Edit</Button></a>
+                    <Button type="button" class="btn btn-danger" name="<?php echo $note['noteID']; ?>" onClick="deleteNote(<?php echo $note['noteID']; ?>)">Delete</Button></td>
             </tr>    
         <?php } ?>
   </tbody>

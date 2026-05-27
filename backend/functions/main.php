@@ -10,7 +10,7 @@ public function logged_in(){
 public function getAllNotes(){
     global $pdo;
 
-    $query = $pdo->prepare('SELECT * FROM notes Order by noteID LIMIT 3');
+    $query = $pdo->prepare('SELECT * FROM notes ORDER BY noteID DESC');
     $query->execute();
 
     return $query->fetchAll(PDO::FETCH_ASSOC);
