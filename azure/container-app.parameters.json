@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "my-container-env"
+    },
+    "containerAppName": {
+      "value": "php-crud-app"
+    },
+    "containerImage": {
+      "value": "myregistry.azurecr.io/php-crud-app:latest"
+    },
+    "targetPort": {
+      "value": 8080
+    },
+    "dbHost": {
+      "value": "myserver.mysql.database.azure.com"
+    },
+    "dbName": {
+      "value": "crud"
+    },
+    "dbUser": {
+      "value": "cruduser@myserver"
+    },
+    "dbPassword": {
+      "value": "CHANGE_ME"
+    },
+    "registryServer": {
+      "value": "myregistry.azurecr.io"
+    },
+    "registryUsername": {
+      "value": "myregistry"
+    },
+    "registryPassword": {
+      "value": "CHANGE_ME"
+    }
+  }
+}
