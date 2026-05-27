@@ -111,11 +111,12 @@ git commit -m "Add Azure CI/CD workflow"
 git push origin main
 ```
 
-GitHub Actions will:
+GitHub Actions runs two jobs:
 
-1. Build the Docker image
-2. Push to ACR (`:latest` and `:<commit-sha>`)
-3. Update the Container App to the new image
+1. **build** — Docker Buildx + layer cache → push `:<commit-sha>` to ACR
+2. **deploy** — configure ACR pull, DB secrets, single `az containerapp update` (image + env)
+
+Concurrent pushes cancel the previous run (`cancel-in-progress`).
 
 Monitor: **GitHub → Actions** tab.
 
