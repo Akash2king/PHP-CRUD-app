@@ -6,9 +6,10 @@
     include ('functions/main.php');
     
 
-	if(isset($_SESSION['loggedin'])===false){
-		header('Location: ../index.php');
-	}else{
+	if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+		header('Location: login.php');
+		exit();
+	}
 
  	if($_POST){
 		$noteTitle = $_POST['noteTitle'];
@@ -20,16 +21,11 @@
 			$errors = '<div class="alert alert-warning"><strong> All fields are required! </strong> Please try again 😒</div>';
 		}else{
 				 	
-			$query = $pdo->prepare("INSERT INTO `crud`.`notes` ( `noteID` ,`noteTitle`, `noteContent`)
-            VALUES ( NULL,?, ?)");
-			$query->bindValue(1, $noteTitle);	
-			$query->bindValue(2, $noteContent);	
-                            
-            $query -> execute(); 
-		    header('Location: ../index.php');	
+			$query = $pdo->prepare('INSERT INTO `notes` (`noteTitle`, `noteContent`) VALUES (?, ?)');
+			$query->execute([$noteTitle, $noteContent]);
+		    header('Location: ../index.php');
+		    exit();
+		}
+	}
 
-					 }
-				 	}
-				}
-	
 ?>

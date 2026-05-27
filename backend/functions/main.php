@@ -31,11 +31,11 @@ public function fetchNoteData($noteID){
 public function fetchUser($username){
     global $pdo;
 
-    $query = $pdo->prepare('SELECT * FROM user WHERE username = ?');
+    $query = $pdo->prepare('SELECT * FROM `user` WHERE username = ?');
     $query->bindValue(1, $username);
     $query->execute();
 
-
+    return $query->rowCount();
 }
 
 }

@@ -15,6 +15,8 @@ if (in_array(getenv('DB_SSL'), ['1', 'true', 'yes'], true)) {
     $pdoOptions[PDO::MYSQL_ATTR_SSL_CA] = getenv('DB_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
 }
 
+$pdoOptions[PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
+
 try{
     $pdo = new PDO($databaseHost, $databaseUser, $databasePass, $pdoOptions);
 }catch (PDOException $e){

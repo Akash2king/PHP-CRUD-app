@@ -6,36 +6,32 @@ include_once ('functions/main.php');
 $theNotes = new Main;
 $notes;
 
-	if(isset($_SESSION['loggedin'])===false){
-		header('Location: ../index.php');
-	}else{
+	if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+		header('Location: login.php');
+		exit();
+	}
 
-    if(isset($_GET['noteID'])){
-            $noteID = $_GET['noteID'];
-            $notes = $theNotes->fetchNoteData($noteID);
+if (!isset($_GET['noteID'])) {
+    header('Location: ../index.php');
+    exit();
+}
 
- 	if($_POST){
-		$noteTitle = $_POST['noteTitle'];
-        $noteContent = $_POST['noteContent'];
-        
-        
+$noteID = $_GET['noteID'];
+$notes = $theNotes->fetchNoteData($noteID);
 
- 		if(empty($noteTitle) or empty($noteContent)){
-			$errors = '<div class="alert alert-warning"><strong> All fields are required! </strong> Please try again 😒</div>';
-		}else{
-				 	
-			$query = $pdo->prepare("UPDATE `notes` SET `noteTitle` =?, `noteContent` = ? WHERE `noteID` = ?;");
-			$query->bindValue(1, $noteTitle);	
-            $query->bindValue(2, $noteContent);
-            $query->bindValue(3, $noteID);
-                            
-            $query -> execute(); 
-		    header('Location: ../index.php');	
+if ($_POST) {
+    $noteTitle = $_POST['noteTitle'];
+    $noteContent = $_POST['noteContent'];
 
-					 }
-				 	}
-                }
-            }
+    if (empty($noteTitle) || empty($noteContent)) {
+        $errors = '<div class="alert alert-warning"><strong>All fields are required!</strong> Please try again.</div>';
+    } else {
+        $query = $pdo->prepare('UPDATE `notes` SET `noteTitle` = ?, `noteContent` = ? WHERE `noteID` = ?');
+        $query->execute([$noteTitle, $noteContent, $noteID]);
+        header('Location: ../index.php');
+        exit();
+    }
+}
 
 ?>
 <!DOCTYPE html>
@@ -45,7 +41,7 @@ $notes;
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>CRUD</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" media="screen" href="CSS/style.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="../CSS/style.css" />
     <script src="main.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">    

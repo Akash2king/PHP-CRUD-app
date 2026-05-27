@@ -1,3 +1,8 @@
+<?php
+session_start();
+$errors = $_SESSION['signup_error'] ?? null;
+unset($_SESSION['signup_error']);
+?>
 <!DOCTYPE html>
 <html>
 <!-- Author: Cozy https://github.com/ItsCosmas -->
