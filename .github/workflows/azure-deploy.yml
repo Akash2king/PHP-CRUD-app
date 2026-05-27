@@ -3,6 +3,14 @@ name: Deploy to Azure Container Apps
 on:
   push:
     branches: [master, main]
+    paths:
+      - '**/*.php'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'docker/**'
+      - 'crud.sql'
+      - 'CSS/**'
+      - '.github/workflows/azure-deploy.yml'
   workflow_dispatch:
 
 concurrency:
