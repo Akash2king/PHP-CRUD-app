@@ -142,6 +142,7 @@ az containerapp update \
 | Issue | Fix |
 |-------|-----|
 | `UNAUTHORIZED` pulling from ACR | Enable ACR **Admin user**; set `ACR_USERNAME`/`ACR_PASSWORD` in GitHub Secrets; workflow runs `az containerapp registry set` before deploy |
+| `simple-hello-world-container` image required | Portal quickstart name; workflow uses `--container-name` from the existing app |
 | ACR push denied | Add `AcrPush` role to the SP |
 | Container App won't start | Check logs: `az containerapp logs show -n php-crud-app -g rg-php-crud` |
 | DB connection error | Verify `DB_HOST`, `DB_USER@server`, firewall, `DB_SSL=true` |
