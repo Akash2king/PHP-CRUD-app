@@ -15,6 +15,7 @@ permissions:
 
 env:
   IMAGE_NAME: php-crud-app
+  CONTAINER_NAME: php-crud
   DB_NAME: crud
   DB_PORT: "3306"
 
@@ -63,8 +64,7 @@ jobs:
       - name: Image reference
         id: meta
         run: |
-          # Deploy immutable SHA tag (latest is also pushed for manual rollbacks)
-          echo "image=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "image=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy to Container App
@@ -80,7 +80,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy app
+      - name: Deploy php-crud container with latest image
         env:
           APP: ${{ secrets.CONTAINER_APP_NAME }}
           RG: ${{ secrets.AZURE_RESOURCE_GROUP }}
@@ -88,13 +88,7 @@ jobs:
           ACR_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
         run: |
           set -euo pipefail
-
-          # Portal quickstart apps use this container name (not "php-crud")
-          CONTAINER=$(az containerapp show \
-            --name "$APP" \
-            --resource-group "$RG" \
-            --query "properties.template.containers[0].name" -o tsv)
-          echo "Target container: ${CONTAINER}"
+          echo "Deploying image: ${IMAGE}"
 
           az containerapp registry set \
             --name "$APP" \
@@ -111,27 +105,32 @@ jobs:
               "db-user=${{ secrets.DB_USER }}" \
               "db-password=${{ secrets.DB_PASSWORD }}"
 
-          # Image first (must include --container-name or image is not applied)
-          az containerapp update \
-            --name "$APP" \
-            --resource-group "$RG" \
-            --container-name "$CONTAINER" \
-            --image "$IMAGE"
+          # Replace portal quickstart container with php-crud + ACR :latest (one revision)
+          APP_ID=$(az containerapp show --name "$APP" --resource-group "$RG" --query id -o tsv)
 
-          # Env on same container (separate revision; secrets now active)
-          az containerapp update \
-            --name "$APP" \
-            --resource-group "$RG" \
-            --container-name "$CONTAINER" \
-            --replace-env-vars \
-              "DB_HOST=secretref:db-host" \
-              "DB_USER=secretref:db-user" \
-              "DB_PASSWORD=secretref:db-password" \
-              "DB_NAME=${{ env.DB_NAME }}" \
-              "DB_PORT=${{ env.DB_PORT }}" \
-              "DB_SSL=true" \
-              "PORT=80" \
-              "WEB_BIND=0.0.0.0"
+          az rest --method PATCH \
+            --uri "${APP_ID}?api-version=2024-03-01" \
+            --body "{
+              \"properties\": {
+                \"template\": {
+                  \"containers\": [{
+                    \"name\": \"${{ env.CONTAINER_NAME }}\",
+                    \"image\": \"${IMAGE}\",
+                    \"resources\": { \"cpu\": 0.5, \"memory\": \"1Gi\" },
+                    \"env\": [
+                      {\"name\": \"PORT\", \"value\": \"80\"},
+                      {\"name\": \"WEB_BIND\", \"value\": \"0.0.0.0\"},
+                      {\"name\": \"DB_HOST\", \"secretRef\": \"db-host\"},
+                      {\"name\": \"DB_PORT\", \"value\": \"${{ env.DB_PORT }}\"},
+                      {\"name\": \"DB_NAME\", \"value\": \"${{ env.DB_NAME }}\"},
+                      {\"name\": \"DB_USER\", \"secretRef\": \"db-user\"},
+                      {\"name\": \"DB_PASSWORD\", \"secretRef\": \"db-password\"},
+                      {\"name\": \"DB_SSL\", \"value\": \"true\"}
+                    ]
+                  }]
+                }
+              }
+            }"
 
       - name: App URL
         run: |
@@ -139,6 +138,15 @@ jobs:
             --name "${{ secrets.CONTAINER_APP_NAME }}" \
             --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
             --query "properties.configuration.ingress.fqdn" -o tsv)
+          CONTAINER=$(az containerapp show \
+            --name "${{ secrets.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --query "properties.template.containers[0].name" -o tsv)
+          IMAGE=$(az containerapp show \
+            --name "${{ secrets.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --query "properties.template.containers[0].image" -o tsv)
           echo "### Deployment" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Image: \`${{ needs.build.outputs.image }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Container: \`${CONTAINER}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image: \`${IMAGE}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- URL: https://${FQDN}" >> "$GITHUB_STEP_SUMMARY"
