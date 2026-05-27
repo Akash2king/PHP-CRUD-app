@@ -28,9 +28,9 @@ wait_for_mysql() {
 }
 
 import_schema() {
-  tables=$(mysql $(mysql_ssl) -h"${DB_HOST}" -P"${DB_PORT}" -u"${DB_USER}" -p"${DB_PASSWORD}" "${DB_NAME}" \
-    -N -e "SHOW TABLES LIKE 'notes';" 2>/dev/null || true)
-  [ -n "${tables}" ] && echo "Schema exists." && return 0
+  count=$(mysql $(mysql_ssl) -h"${DB_HOST}" -P"${DB_PORT}" -u"${DB_USER}" -p"${DB_PASSWORD}" "${DB_NAME}" \
+    -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_NAME}' AND table_name IN ('notes','user');" 2>/dev/null || echo 0)
+  [ "${count}" = "2" ] && echo "Schema exists." && return 0
   echo "Importing schema..."
   mysql $(mysql_ssl) -h"${DB_HOST}" -P"${DB_PORT}" -u"${DB_USER}" -p"${DB_PASSWORD}" "${DB_NAME}" < /docker-init/crud.sql
 }
