@@ -1,8 +1,19 @@
 #!/bin/bash
 set -e
 
+. /usr/local/bin/load-env.sh
+load_dotenv_files
+
 export PORT="${PORT:-8080}"
 export WEB_BIND="${WEB_BIND:-0.0.0.0}"
+export DB_HOST="${DB_HOST:-127.0.0.1}"
+export DB_PORT="${DB_PORT:-3306}"
+export DB_NAME="${DB_NAME:-crud}"
+export DB_USER="${DB_USER:-cruduser}"
+export DB_PASSWORD="${DB_PASSWORD:-crudpass}"
+export DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-rootpass}"
+export DB_SSL="${DB_SSL:-false}"
+export USE_EMBEDDED_DB="${USE_EMBEDDED_DB:-auto}"
 
 resolve_embedded_db() {
     case "${USE_EMBEDDED_DB:-auto}" in
