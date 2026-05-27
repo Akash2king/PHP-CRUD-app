@@ -2,33 +2,12 @@ server {
     listen ${WEB_BIND}:${PORT} default_server;
     server_name _;
     root /var/www/html;
-    index index.php index.html;
-
-    client_max_body_size 10M;
-
-    # Azure Container Apps / reverse-proxy health probes
-    location = /health {
-        access_log off;
-        add_header Content-Type text/plain;
-        return 200 'ok';
-    }
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
+    index index.php;
+    location = /health { return 200 'ok\n'; add_header Content-Type text/plain; }
+    location / { try_files $uri $uri/ /index.php?$query_string; }
     location ~ \.php$ {
-        try_files $uri =404;
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
         fastcgi_pass 127.0.0.1:9000;
-        fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_param PATH_INFO $fastcgi_path_info;
-        fastcgi_param HTTPS $http_x_forwarded_proto;
-    }
-
-    location ~ /\. {
-        deny all;
     }
 }
