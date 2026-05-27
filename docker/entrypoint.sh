@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+if [ -f "${ENV_FILE:-/run/config/.env}" ]; then
+  while IFS= read -r line || [ -n "${line}" ]; do
+    case "${line}" in ''|\#*) continue ;; *=*)
+      k="${line%%=*}"; v="${line#*=}"
+      [ -z "${!k+x}" ] && export "${k}=${v}"
+    esac
+  done < "${ENV_FILE:-/run/config/.env}"
+fi
+
 mysql_ssl() { [ "${DB_SSL}" = "true" ] || [ "${DB_SSL}" = "1" ] && echo "--ssl"; }
 
 wait_for_mysql() {

@@ -10,8 +10,8 @@ param containerAppName string
 @description('Container image from ACR or Docker Hub')
 param containerImage string
 
-@description('Must match container PORT env (default 8080)')
-param targetPort int = 8080
+@description('Must match container PORT env (default 80)')
+param targetPort int = 80
 
 @description('Azure Database for MySQL hostname')
 param dbHost string

@@ -12,7 +12,7 @@
       "value": "myregistry.azurecr.io/php-crud-app:latest"
     },
     "targetPort": {
-      "value": 8080
+      "value": 80
     },
     "dbHost": {
       "value": "myserver.mysql.database.azure.com"
