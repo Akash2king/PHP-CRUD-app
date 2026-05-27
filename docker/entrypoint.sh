@@ -1,14 +1,15 @@
 #!/bin/bash
 set -e
 
-if [ -f "${ENV_FILE:-/run/config/.env}" ]; then
+for env_file in /run/config/.env /var/www/html/.env; do
+  [ -f "${env_file}" ] || continue
   while IFS= read -r line || [ -n "${line}" ]; do
     case "${line}" in ''|\#*) continue ;; *=*)
       k="${line%%=*}"; v="${line#*=}"
       [ -z "${!k+x}" ] && export "${k}=${v}"
     esac
-  done < "${ENV_FILE:-/run/config/.env}"
-fi
+  done < "${env_file}"
+done
 
 mysql_ssl() { [ "${DB_SSL}" = "true" ] || [ "${DB_SSL}" = "1" ] && echo "--ssl"; }
 

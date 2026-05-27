@@ -13,7 +13,6 @@ COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chmod +x /usr/local/bin/entrypoint.sh && rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf
-COPY .env /run/config/.env
-ENV ENV_FILE=/run/config/.env
+ENV PORT=80 WEB_BIND=0.0.0.0 DB_PORT=3306 DB_NAME=crud DB_SSL=true
 EXPOSE 80
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

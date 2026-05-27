@@ -57,6 +57,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       secrets: concat(
         [
           {
+            name: 'db-host'
+            value: dbHost
+          }
+          {
+            name: 'db-user'
+            value: dbUser
+          }
+          {
             name: 'db-password'
             value: dbPassword
           }
@@ -88,12 +96,8 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: '0.0.0.0'
             }
             {
-              name: 'USE_EMBEDDED_DB'
-              value: 'false'
-            }
-            {
               name: 'DB_HOST'
-              value: dbHost
+              secretRef: 'db-host'
             }
             {
               name: 'DB_PORT'
@@ -105,7 +109,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'DB_USER'
-              value: dbUser
+              secretRef: 'db-user'
             }
             {
               name: 'DB_PASSWORD'
